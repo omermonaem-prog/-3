@@ -31,4 +31,13 @@ jobs:
       - name: Get packages
         working-directory: app
         run: flutter pub get
-      - na
+      - name: Generate Drift code
+        working-directory: app
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Build APK
+        working-directory: app
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jazlani-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
