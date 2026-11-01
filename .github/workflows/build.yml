@@ -48,7 +48,15 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Build APK
         working-directory: app
-        run: flutter build apk --release
+        run: |
+          set +e
+          flutter build apk --release > build.log 2>&1
+          CODE=$?
+          echo "=========== ERRORS ==========="
+          grep -n -A12 "What went wrong" build.log | head -40
+          grep -n "error:" build.log | head -20
+          echo "=========== END ==========="
+          exit $CODE
       - uses: actions/upload-artifact@v4
         with:
           name: jazlani-apk
