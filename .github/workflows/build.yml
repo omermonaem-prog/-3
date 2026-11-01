@@ -18,7 +18,8 @@ jobs:
           channel: stable
       - name: Unzip project
         run: |
-          Z="$(ls *.zip | head -1)"
+          Z="project.zip"
+          [ -f "$Z" ] || Z="$(ls *.zip | head -1)"
           unzip -q "$Z" -d raw || true
           P="$(find raw -name pubspec.yaml | head -1)"
           mv "$(dirname "$P")" app
@@ -93,14 +94,21 @@ jobs:
         working-directory: app
         run: |
           flutter analyze lib --no-fatal-infos --no-fatal-warnings > analyze.log 2>&1 || true
-          grep -E "^ +error" analyze.log | sed 's/^ *//' | cut -c1-200 > errors.txt || true
+          grep -E "^ +error" analyze.log | sed 's/^ *//' | cut -c1-300 > errors.txt || true
           N=$(wc -l < errors.txt)
           echo "Total errors: $N"
           if [ "$N" -gt 0 ]; then
-            MSG=$(head -25 errors.txt | awk '{printf "%s%%0A",$0}')
-            echo "::error title=Dart errors ($N)::$MSG"
             exit 1
           fi
+      - name: Upload error report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyze-report
+          path: |
+            app/errors.txt
+            app/analyze.log
+          if-no-files-found: ignore
       - name: Build APK
         working-directory: app
         run: flutter build apk --release
