@@ -23,6 +23,17 @@ jobs:
           P="$(find raw -name pubspec.yaml | head -1)"
           mv "$(dirname "$P")" app
           rm -rf app/android
+      - name: Fix Drift config
+        run: |
+          cat > app/build.yaml <<'EOF'
+          targets:
+            $default:
+              builders:
+                drift_dev:
+                  options:
+                    sql:
+                      dialect: sqlite
+          EOF
       - name: Create Android platform files
         working-directory: app
         run: flutter create . --org com.myfinance --project-name my_finance --platforms android
