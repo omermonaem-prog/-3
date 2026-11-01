@@ -46,17 +46,17 @@ jobs:
       - name: Generate Drift code
         working-directory: app
         run: dart run build_runner build --delete-conflicting-outputs
+      - name: Analyze code
+        working-directory: app
+        continue-on-error: true
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.log 2>&1 || true
+          echo "=========== ERRORS ==========="
+          grep -E "^ +error" analyze.log | head -30
+          echo "=========== END ==========="
       - name: Build APK
         working-directory: app
-        run: |
-          set +e
-          flutter build apk --release > build.log 2>&1
-          CODE=$?
-          echo "=========== ERRORS ==========="
-          grep -n -A12 "What went wrong" build.log | head -40
-          grep -n "error:" build.log | head -20
-          echo "=========== END ==========="
-          exit $CODE
+        run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with:
           name: jazlani-apk
