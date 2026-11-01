@@ -34,6 +34,10 @@ jobs:
                     sql:
                       dialect: sqlite
           EOF
+      - name: Fix int64 columns
+        run: |
+          sed -i 's/Int64Column/IntColumn/g; s/int64()/integer()/g' app/lib/core/database/app_database.dart
+          grep -c "integer()" app/lib/core/database/app_database.dart
       - name: Create Android platform files
         working-directory: app
         run: flutter create . --org com.myfinance --project-name my_finance --platforms android
@@ -52,7 +56,7 @@ jobs:
         run: |
           flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.log 2>&1 || true
           echo "=========== ERRORS ==========="
-          grep -E "^ +error" analyze.log | head -30
+          grep -E "^ +error" analyze.log | cut -c1-160 | head -30
           echo "=========== END ==========="
       - name: Build APK
         working-directory: app
