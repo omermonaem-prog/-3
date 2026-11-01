@@ -37,7 +37,6 @@ jobs:
       - name: Fix int64 columns
         run: |
           sed -i 's/Int64Column/IntColumn/g; s/int64()/integer()/g' app/lib/core/database/app_database.dart
-          grep -c "integer()" app/lib/core/database/app_database.dart
       - name: Create Android platform files
         working-directory: app
         run: flutter create . --org com.myfinance --project-name my_finance --platforms android
@@ -52,12 +51,14 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Analyze code
         working-directory: app
-        continue-on-error: true
         run: |
           flutter analyze --no-fatal-infos --no-fatal-warnings > analyze.log 2>&1 || true
-          echo "=========== ERRORS ==========="
-          grep -E "^ +error" analyze.log | cut -c1-160 | head -30
-          echo "=========== END ==========="
+          grep -E "^ +error" analyze.log | sed 's/^ *//' | cut -c1-230 > errors.txt || true
+          N=$(wc -l < errors.txt)
+          echo "## Errors: $N" >> $GITHUB_STEP_SUMMARY
+          head -40 errors.txt | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          head -10 errors.txt | while read -r line; do echo "::error::$line"; done
+          if [ "$N" -gt 0 ]; then exit 1; fi
       - name: Build APK
         working-directory: app
         run: flutter build apk --release
